@@ -1,2 +1,2 @@
-# spotifystat-list
-A website that allows users to view stats about each song in their Spotify playlists.
+# prismatify
+A website that allows users to view data about their Spotify playlists.
