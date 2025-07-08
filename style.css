@@ -47,6 +47,7 @@ p {
 }
 
 input {
+    font-family: "Cabin", sans-serif;
     display: block;
     width: 500px;
     height: 20px;
@@ -55,6 +56,8 @@ input {
 }
 
 button {
+    font-family: "Cabin", sans-serif;
+    font-weight: 800;
     display: block;
     width: 200px;
     height: 20px;
