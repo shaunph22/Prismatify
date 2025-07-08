@@ -10,8 +10,10 @@ h1 {
     font-weight: 800;
     font-size: 45px;
     text-align: center;
-    margin-top: 10px;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
+    
 }
 
 h2 {
@@ -19,6 +21,15 @@ h2 {
     font-weight: 400;
     text-align: center;
     margin-top: 10px;
+    margin-bottom: 50px;
+}
+
+h3 {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 2px;
 }
 
 img {
@@ -29,4 +40,32 @@ img {
     margin-top: 20px;
     margin-bottom: 0.5px;
 }
+
+p {
+    font-family: "Montserrat", sans-serif;
+    text-align: center;
+}
+
+input {
+    display: block;
+    width: 500px;
+    height: 20px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+button {
+    display: block;
+    width: 200px;
+    height: 20px;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.mycontainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 

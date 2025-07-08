@@ -12,13 +12,22 @@
 
 </head>
 <body>
-    <img src="images/logo.png" alt="logo">
-    <h1>Prismatify</h1>
+    <div class="mycontainer">
+        <div><img src="images/logo.png" alt="logo"></div>
+        <div></div><h1>Prismatify</h1></div>
+    </div>
     <h2>See statistics of songs in a Spotify playlist!</h2>
-
-    <label for="playlistLink">Enter a Spotify playlist link:</label>
-    <input type="text" id="playlistLink" name="playlistLink">
-
-    <button type="button">Analyze</button>
+    <div class="mycontainer">
+        <div>
+        <label for="playlistLink"></label>
+        <input type="text" placeholder="Enter a Spotify playlist link:" id="playlistLink" name="playlistLink">
+        </div>
+        <div>
+        <button type="button">Analyze</button>
+        </div>
+    </div>
+    <h3>Notes:</h3>
+    <p>- Please remember that the playlist link must be set to public.</p>
+    <p>- Playlists with more than 5,000 songs will not operate.</p>
 </body>
 </html>
