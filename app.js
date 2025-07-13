@@ -7,7 +7,7 @@ function extractPlaylistID(url){
 
 // Fetch playlist data
 async function fetchPlaylist(playlistID){
-    const token = "a8189afb6b8f45ec8176d6313446bc5f";
+    const token = "22b5867be4c74e949ac5c0e10f6b1b12";
     const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistID}`, {
         headers: {
             Authorization: `Bearer ${token}`
