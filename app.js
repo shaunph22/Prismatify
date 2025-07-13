@@ -15,10 +15,14 @@ async function fetchPlaylist(playlistID){
     });
 
     if(!response.ok){
-        alert("Could not fetch playlist data.");
-        return;
+    console.error("Response status: ", response.status);
+    const errorText = await response.text();
+    console.error("Error response body: ", errorText);
+    alert("Could not fetch playlist data.");
+    return;
     }
 
+    console.log("Playlist ID:", playlistID);
     const data = await response.json();
     displayPlaylist(data);
 
