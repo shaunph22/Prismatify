@@ -1,6 +1,6 @@
 // Takes full playlist link and matches it to Spotify database
 function extractPlaylistID(url){
-    const regex = /playlist\/(a-zA-Z0-9]+)/;
+    const regex = /playlist\/([a-zA-Z0-9]+)/;
     const match = url.match(regex);
     return match ? match[1] : null;
 }
@@ -20,6 +20,8 @@ async function fetchPlaylist(playlistID){
     }
 
     const data = await response.json();
+    displayPlaylist(data);
+
 }
 
 // Displays data of playlist
@@ -33,7 +35,7 @@ function displayPlaylist(playlist){
     let totalPopularity = 0;
     let trackCount = playlist.tracks.items.length;
 
-    playlist.tracks.items.array.forEach((item) => {
+    playlist.tracks.items.forEach((item) => {
         const track = item.track;
 
         totalDuration += track.duration_ms;
@@ -92,3 +94,15 @@ function formatDuration(ms){
     const seconds = totalSeconds % 60;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
+
+document.getElementById("analyzeButton").addEventListener("click", () => {
+    const urlInput = document.getElementById("playlistLink").value.trim();
+    const playlistID = extractPlaylistID(urlInput);
+
+    if(!playlistID){
+        alert("Invalid Spotify playlist URL.");
+        return;
+    }
+
+    fetchPlaylist(playlistID);
+});
