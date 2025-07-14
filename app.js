@@ -1,18 +1,23 @@
-// Helper: Get query parameter by name from URL
-function getQueryParam(param) {
-  const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get(param);
+// Helper to get token from query string
+function getTokenFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('access_token');
 }
 
-// Helper: Extract playlist ID from full Spotify playlist URL or URI
+// Helper to get token from URL hash (after #)
+function getTokenFromHash() {
+  const hash = window.location.hash.substring(1); // remove '#'
+  const params = new URLSearchParams(hash);
+  return params.get('access_token');
+}
+
 function extractPlaylistID(url) {
-  // Matches playlist/ followed by letters, numbers, underscores, or hyphens
-  const regex = /playlist\/([a-zA-Z0-9_-]+)/;
+  // Extract Spotify playlist ID from full playlist URL
+  const regex = /playlist\/([a-zA-Z0-9]+)/;
   const match = url.match(regex);
   return match ? match[1] : null;
 }
 
-// Helper: Format milliseconds to MM:SS
 function formatDuration(ms) {
   const totalSeconds = Math.floor(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
@@ -20,103 +25,103 @@ function formatDuration(ms) {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-// Main function to fetch and display playlist data
-async function fetchAndDisplayPlaylist(token, playlistID) {
-  const container = document.getElementById('playlistResults');
-  container.innerHTML = 'Loading playlist data...';
-
-  try {
-    const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistID}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    if (!response.ok) {
-      container.innerHTML = `<p style="color:red;">Failed to fetch playlist data: ${response.status} ${response.statusText}</p>`;
-      return;
-    }
-
-    const playlist = await response.json();
-
-    // Calculate stats
-    const tracks = playlist.tracks.items;
-    let totalDurationMs = 0;
-    let totalPopularity = 0;
-
-    tracks.forEach(item => {
-      if (item.track) {
-        totalDurationMs += item.track.duration_ms;
-        totalPopularity += item.track.popularity;
-      }
-    });
-
-    const avgDurationMs = totalDurationMs / tracks.length;
-    const avgPopularity = (totalPopularity / tracks.length).toFixed(1);
-
-    // Clear container and display summary
-    container.innerHTML = `
-      <h2>${playlist.name}</h2>
-      <p><strong>By:</strong> ${playlist.owner.display_name}</p>
-      <p><strong>Total Tracks:</strong> ${tracks.length}</p>
-      <p><strong>Average Length:</strong> ${formatDuration(avgDurationMs)}</p>
-      <p><strong>Average Popularity:</strong> ${avgPopularity}</p>
-      <hr>
-      <div id="trackList"></div>
-    `;
-
-    // Display individual tracks
-    const trackList = document.getElementById('trackList');
-    tracks.forEach((item, index) => {
-      if (item.track) {
-        const track = item.track;
-        const artists = track.artists.map(a => a.name).join(', ');
-        const trackDiv = document.createElement('div');
-        trackDiv.style.marginBottom = '10px';
-        trackDiv.style.padding = '8px';
-        trackDiv.style.backgroundColor = 'rgba(0,183,255,0.05)';
-        trackDiv.style.borderRadius = '6px';
-        trackDiv.style.color = 'white';
-        trackDiv.innerHTML = `
-          <strong>${index + 1}. ${track.name}</strong> by ${artists} <br>
-          Album: ${track.album.name} <br>
-          Length: ${formatDuration(track.duration_ms)} | Popularity: ${track.popularity} <br>
-          <a href="${track.external_urls.spotify}" target="_blank" style="color:#1DB954;">Open in Spotify</a>
-        `;
-        trackList.appendChild(trackDiv);
-      }
-    });
-
-  } catch (error) {
-    container.innerHTML = `<p style="color:red;">Error fetching playlist data.</p>`;
-    console.error('Fetch error:', error);
-  }
-}
-
-// On page load
 window.onload = () => {
-  const accessToken = getQueryParam('access_token');
+  let accessToken = getTokenFromQuery() || getTokenFromHash();
+
   if (!accessToken) {
     alert('No Spotify access token found. Please log in first.');
     return;
   }
 
-  const analyzeBtn = document.querySelector('button#analyzeButton');
-  const playlistInput = document.getElementById('playlistLink');
-  const container = document.getElementById('playlistResults');
+  console.log("Access token:", accessToken);
 
-  analyzeBtn.addEventListener('click', () => {
-    const playlistUrl = playlistInput.value.trim();
-    if (!playlistUrl) {
-      alert('Please enter a Spotify playlist link.');
-      return;
-    }
-
+  const analyzeBtn = document.getElementById('analyzeButton');
+  analyzeBtn.addEventListener('click', async () => {
+    const playlistUrl = document.getElementById('playlistLink').value.trim();
     const playlistID = extractPlaylistID(playlistUrl);
+
     if (!playlistID) {
-      alert('Invalid Spotify playlist link.');
+      alert('Please enter a valid Spotify playlist URL.');
       return;
     }
 
-    fetchAndDisplayPlaylist(accessToken, playlistID);
+    try {
+      const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistID}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+
+      if (!response.ok) {
+        alert('Could not fetch playlist data. Please make sure the playlist is public.');
+        return;
+      }
+
+      const playlist = await response.json();
+
+      displayPlaylist(playlist);
+    } catch (error) {
+      alert('Error fetching playlist data.');
+      console.error(error);
+    }
   });
 
+  function displayPlaylist(playlist) {
+    const container = document.getElementById('playlistResults');
+    container.innerHTML = ''; // Clear previous results
+
+    let totalDuration = 0;
+    let totalPopularity = 0;
+    const tracks = playlist.tracks.items;
+    const trackCount = tracks.length;
+
+    tracks.forEach((item) => {
+      const track = item.track;
+
+      totalDuration += track.duration_ms;
+      totalPopularity += track.popularity;
+
+      const card = document.createElement('div');
+      card.className = 'track-card';
+      card.style.margin = '10px';
+      card.style.padding = '10px';
+      card.style.backgroundColor = 'rgba(0, 183, 255, 0.05)';
+      card.style.borderRadius = '8px';
+      card.style.color = 'white';
+      card.style.maxWidth = '300px';
+      card.style.textAlign = 'center';
+
+      card.innerHTML = `
+        <img src="${track.album.images[0]?.url || ''}" alt="Cover" style="width:100%; border-radius:4px;">
+        <h3 style="font-family:'Montserrat', sans-serif; font-size:16px; margin:10px 0;">${track.name}</h3>
+        <p style="font-family:'Cabin', sans-serif;">${track.artists.map(a => a.name).join(', ')}</p>
+        <p style="font-family:'Cabin', sans-serif; font-size:12px;">${track.album.name}</p>
+        <p style="font-family:'Cabin', sans-serif;">Popularity: ${track.popularity}</p>
+        <p style="font-family:'Cabin', sans-serif;">Length: ${formatDuration(track.duration_ms)}</p>
+        <a href="${track.external_urls.spotify}" target="_blank" style="color:#1DB954; text-decoration:none;">Open in Spotify</a>
+      `;
+      container.appendChild(card);
+    });
+
+    const avgPopularity = (totalPopularity / trackCount).toFixed(1);
+    const avgDurationMS = totalDuration / trackCount;
+
+    const summary = document.createElement('div');
+    summary.style.margin = '20px auto';
+    summary.style.padding = '15px';
+    summary.style.backgroundColor = 'rgba(0,0,0,0.6)';
+    summary.style.color = 'white';
+    summary.style.fontFamily = "'Montserrat', sans-serif";
+    summary.style.textAlign = 'center';
+    summary.style.borderRadius = '8px';
+    summary.style.maxWidth = '500px';
+
+    summary.innerHTML = `
+      <h2>Playlist Stats</h2>
+      <p>Average Popularity: ${avgPopularity}</p>
+      <p>Average Song Length: ${formatDuration(avgDurationMS)}</p>
+    `;
+
+    container.prepend(summary);
+  }
 };
