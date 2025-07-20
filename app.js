@@ -152,7 +152,7 @@ window.onload = () => {
   summary.style.padding = '15px';
   summary.style.backgroundColor = 'rgba(0,0,0,0.6)';
   summary.style.borderRadius = '8px';
-  summary.style.color = 'black';
+  summary.style.color = 'white';
   summary.style.textAlign = 'center';
   summary.style.fontFamily = "'Montserrat', sans-serif";
 
