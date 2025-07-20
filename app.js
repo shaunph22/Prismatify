@@ -11,8 +11,8 @@ function getTokenFromHash() {
   return params.get('access_token');
 }
 
+// Extract Spotify playlist ID from full playlist URL
 function extractPlaylistID(url) {
-  // Extract Spotify playlist ID from full playlist URL
   const regex = /playlist\/([a-zA-Z0-9]+)/;
   const match = url.match(regex);
   return match ? match[1] : null;
@@ -67,61 +67,101 @@ window.onload = () => {
   });
 
   function displayPlaylist(playlist) {
-    const container = document.getElementById('playlistResults');
-    container.innerHTML = ''; // Clear previous results
+  const container = document.getElementById('playlistResults');
+  // Clear previous results
+  container.innerHTML = ''; 
 
-    let totalDuration = 0;
-    let totalPopularity = 0;
-    const tracks = playlist.tracks.items;
-    const trackCount = tracks.length;
+  // Prepare stats
+  let totalDuration = 0;
+  let totalPopularity = 0;
+  const tracks = playlist.tracks.items;
+  const trackCount = tracks.length;
 
-    tracks.forEach((item) => {
-      const track = item.track;
+  // Create the table
+  const table = document.createElement('table');
+  table.style.width = '100%';
+  table.style.borderCollapse = 'collapse';
+  table.style.fontFamily = "'Cabin', sans-serif";
+  table.style.color = 'white';
+  table.style.marginTop = '20px';
 
-      totalDuration += track.duration_ms;
-      totalPopularity += track.popularity;
+  // Table header
+  const headerRow = document.createElement('tr');
+  const headers = ['Artwork', 'Title', 'Artist(s)', 'Album', 'Popularity', 'Length'];
+  headers.forEach(header => {
+    const th = document.createElement('th');
+    th.textContent = header;
+    th.style.borderBottom = '2px solid white';
+    th.style.padding = '10px';
+    th.style.textAlign = 'left';
+    headerRow.appendChild(th);
+  });
+  table.appendChild(headerRow);
 
-      const card = document.createElement('div');
-      card.className = 'track-card';
-      card.style.margin = '10px';
-      card.style.padding = '10px';
-      card.style.backgroundColor = 'rgba(0, 183, 255, 0.05)';
-      card.style.borderRadius = '8px';
-      card.style.color = 'white';
-      card.style.maxWidth = '300px';
-      card.style.textAlign = 'center';
+  // Table rows
+  tracks.forEach(item => {
+    const track = item.track;
+    totalDuration += track.duration_ms;
+    totalPopularity += track.popularity;
 
-      card.innerHTML = `
-        <img src="${track.album.images[0]?.url || ''}" alt="Cover" style="width:100%; border-radius:4px;">
-        <h3 style="font-family:'Montserrat', sans-serif; font-size:16px; margin:10px 0;">${track.name}</h3>
-        <p style="font-family:'Cabin', sans-serif;">${track.artists.map(a => a.name).join(', ')}</p>
-        <p style="font-family:'Cabin', sans-serif; font-size:12px;">${track.album.name}</p>
-        <p style="font-family:'Cabin', sans-serif;">Popularity: ${track.popularity}</p>
-        <p style="font-family:'Cabin', sans-serif;">Length: ${formatDuration(track.duration_ms)}</p>
-        <a href="${track.external_urls.spotify}" target="_blank" style="color:#1DB954; text-decoration:none;">Open in Spotify</a>
-      `;
-      container.appendChild(card);
-    });
+    const row = document.createElement('tr');
 
-    const avgPopularity = (totalPopularity / trackCount).toFixed(1);
-    const avgDurationMS = totalDuration / trackCount;
+    const artworkCell = document.createElement('td');
+    artworkCell.innerHTML = `<img src="${track.album.images[0]?.url || ''}" alt="Cover" style="width:60px; border-radius:4px;">`;
+    artworkCell.style.padding = '10px';
 
-    const summary = document.createElement('div');
-    summary.style.margin = '20px auto';
-    summary.style.padding = '15px';
-    summary.style.backgroundColor = 'rgba(0,0,0,0.6)';
-    summary.style.color = 'white';
-    summary.style.fontFamily = "'Montserrat', sans-serif";
-    summary.style.textAlign = 'center';
-    summary.style.borderRadius = '8px';
-    summary.style.maxWidth = '500px';
+    const titleCell = document.createElement('td');
+    titleCell.innerHTML = `<a href="${track.external_urls.spotify}" target="_blank" style="color:#1DB954; text-decoration:none;">${track.name}</a>`;
+    titleCell.style.padding = '10px';
 
-    summary.innerHTML = `
-      <h2>Playlist Stats</h2>
-      <p>Average Popularity: ${avgPopularity}</p>
-      <p>Average Song Length: ${formatDuration(avgDurationMS)}</p>
-    `;
+    const artistCell = document.createElement('td');
+    artistCell.textContent = track.artists.map(a => a.name).join(', ');
+    artistCell.style.padding = '10px';
 
-    container.prepend(summary);
-  }
+    const albumCell = document.createElement('td');
+    albumCell.textContent = track.album.name;
+    albumCell.style.padding = '10px';
+
+    const popularityCell = document.createElement('td');
+    popularityCell.textContent = track.popularity;
+    popularityCell.style.padding = '10px';
+
+    const lengthCell = document.createElement('td');
+    lengthCell.textContent = formatDuration(track.duration_ms);
+    lengthCell.style.padding = '10px';
+
+    row.appendChild(artworkCell);
+    row.appendChild(titleCell);
+    row.appendChild(artistCell);
+    row.appendChild(albumCell);
+    row.appendChild(popularityCell);
+    row.appendChild(lengthCell);
+
+    table.appendChild(row);
+  });
+
+  // Append table to the container
+  container.appendChild(table);
+
+  // Summary Stats
+  const avgPopularity = (totalPopularity / trackCount).toFixed(1);
+  const avgDurationMS = totalDuration / trackCount;
+
+  const summary = document.createElement('div');
+  summary.style.marginTop = '30px';
+  summary.style.padding = '15px';
+  summary.style.backgroundColor = 'rgba(0,0,0,0.6)';
+  summary.style.borderRadius = '8px';
+  summary.style.color = 'white';
+  summary.style.textAlign = 'center';
+  summary.style.fontFamily = "'Montserrat', sans-serif";
+
+  summary.innerHTML = `
+    <h2>Playlist Stats</h2>
+    <p>Average Popularity: ${avgPopularity}</p>
+    <p>Average Song Length: ${formatDuration(avgDurationMS)}</p>
+  `;
+
+  container.appendChild(summary);
+}
 };
