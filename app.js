@@ -82,7 +82,7 @@ window.onload = () => {
   table.style.width = '100%';
   table.style.borderCollapse = 'collapse';
   table.style.fontFamily = "'Cabin', sans-serif";
-  table.style.color = 'white';
+  table.style.color = 'black';
   table.style.marginTop = '20px';
 
   // Table header
@@ -91,7 +91,7 @@ window.onload = () => {
   headers.forEach(header => {
     const th = document.createElement('th');
     th.textContent = header;
-    th.style.borderBottom = '2px solid white';
+    th.style.borderBottom = '2px solid black';
     th.style.padding = '10px';
     th.style.textAlign = 'left';
     headerRow.appendChild(th);
@@ -152,7 +152,7 @@ window.onload = () => {
   summary.style.padding = '15px';
   summary.style.backgroundColor = 'rgba(0,0,0,0.6)';
   summary.style.borderRadius = '8px';
-  summary.style.color = 'white';
+  summary.style.color = 'black';
   summary.style.textAlign = 'center';
   summary.style.fontFamily = "'Montserrat', sans-serif";
 
