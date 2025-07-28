@@ -21,7 +21,7 @@ function redirectToSpotifyLogin() {
 }
 
 // Token handling
-let accessToken = getTokenFromHash();
+let accessToken = getTokenFromUrl();
 if (!accessToken) {
   redirectToSpotifyLogin();
 } else {
