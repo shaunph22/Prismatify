@@ -1,22 +1,18 @@
-// Authenticate Spotify
-const clientId = '22b5867be4c74e949ac5c0e10f6b1b12';
-const redirectUri = 'https://shaunph22.github.io/Prismatify/';
-const scopes = ['playlist-read-private', 'playlist-read-collaborative'];
-
 // Receive token from URL
 function getTokenFromUrl(){
-  const hash = window.location.hash;
-  const match = hash.match(/access_token=([^&]*)/);
-  return match ? match[1] : null;
+  const hash = window.location.hash.substring(1);
+  const params = new URLSearchParams(hash);
+  return params.get('access_token');
 }
 
 // Spotify login
 function redirectToSpotifyLogin() {
-  const authUrl = `https://accounts.spotify.com/authorize` +
-    `?client_id=${clientId}` +
-    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-    `&scope=${scopes.join('%20')}` +
-    `&response_type=token`;
+  const clientId = 'YOUR_CLIENT_ID'; 
+  const redirectUri = 'https://shaunph22.github.io/Prismatify/';
+  const scopes = ['playlist-read-private', 'playlist-read-collaborative'];
+
+  const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
+
   window.location.href = authUrl;
 }
 
@@ -40,7 +36,7 @@ window.onload = () => {
   console.log("Access token obtained: ", accessToken);
 
   const analyzeBtn = document.getElementById('analyzeButton');
-  analyzeBtn.addEventListener('click', async () => {
+  analyzeBtn.addEventListener('click', () => {
     const playlistUrl = document.getElementById('playlistLink').value.trim();
     const playlistID = extractPlaylistID(playlistUrl);
 
