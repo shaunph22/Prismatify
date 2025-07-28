@@ -7,7 +7,7 @@ function getTokenFromUrl(){
 
 // Spotify login
 function redirectToSpotifyLogin() {
-  const clientId = 'YOUR_CLIENT_ID'; 
+  const clientId = '22b5867be4c74e949ac5c0e10f6b1b12'; 
   const redirectUri = 'https://shaunph22.github.io/Prismatify/';
   const scopes = ['playlist-read-private', 'playlist-read-collaborative'];
 
