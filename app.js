@@ -33,10 +33,9 @@ window.onload = () => {
 
     if(getTokenFromUrl()){
       localStorage.setItem('spotify_access_token', accessToken);
+      window.history.replaceState({}, document.title, "/");
     }
   }
-
-  
 
   const analyzeBtn = document.getElementById('analyzeButton');
   analyzeBtn.addEventListener('click', async () => {
