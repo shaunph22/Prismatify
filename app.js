@@ -1,39 +1,41 @@
-// Helper to get token from query string
-function getTokenFromQuery() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('access_token');
-}
+// Authenticate Spotify
+const clientId = '22b5867be4c74e949ac5c0e10f6b1b12';
+const redirectUri = 'https://shaunph22.github.io/Prismatify/';
+const scopes = ['playlist-read-private', 'playlist-read-collaborative'];
 
-// Helper to get token from URL hash (after #)
-function getTokenFromHash() {
-  const hash = window.location.hash.substring(1); // remove '#'
-  const params = new URLSearchParams(hash);
-  return params.get('access_token');
-}
-
-// Extract Spotify playlist ID from full playlist URL
-function extractPlaylistID(url) {
-  const regex = /playlist\/([a-zA-Z0-9]+)/;
-  const match = url.match(regex);
+// Receive token from URL
+function getTokenFromUrl(){
+  const hash = window.location.hash;
+  const match = hash.match(/access_token=([^&]*)/);
   return match ? match[1] : null;
 }
 
-function formatDuration(ms) {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+// Spotify login
+function redirectToSpotifyLogin() {
+  const authUrl = `https://accounts.spotify.com/authorize` +
+    `?client_id=${clientId}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&scope=${scopes.join('%20')}` +
+    `&response_type=token`;
+  window.location.href = authUrl;
 }
 
-window.onload = () => {
-  let accessToken = getTokenFromQuery() || getTokenFromHash();
+// Token handling
+let accessToken = getTokenFromHash();
+if (!accessToken) {
+  redirectToSpotifyLogin();
+} else {
+  // Clean the URL after token extraction
+  window.history.pushState("", document.title, window.location.pathname + window.location.search);
+  console.log("✅ Access token obtained:", accessToken);
+}
 
+// Loading page
+window.onload = () => {
   if (!accessToken) {
-    alert('No Spotify access token found. Please log in first.');
+    alert('No Spotify access token found. Please log in.');
     return;
   }
-
-  console.log("Access token:", accessToken);
 
   const analyzeBtn = document.getElementById('analyzeButton');
   analyzeBtn.addEventListener('click', async () => {
@@ -58,34 +60,74 @@ window.onload = () => {
       }
 
       const playlist = await response.json();
-
       displayPlaylist(playlist);
+
     } catch (error) {
       alert('Error fetching playlist data.');
       console.error(error);
     }
   });
+};
 
-  function displayPlaylist(playlist) {
+// Extract Spotify playlist ID from full playlist URL
+function extractPlaylistID(url) {
+  const regex = /playlist\/([a-zA-Z0-9]+)/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+}
+
+function formatDuration(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Displays playlist summary and list
+function displayPlaylist(playlist) {
   const container = document.getElementById('playlistResults');
-  // Clear previous results
-  container.innerHTML = ''; 
+  container.innerHTML = '';  // Clear previous results
 
-  // Prepare stats
   let totalDuration = 0;
   let totalPopularity = 0;
   const tracks = playlist.tracks.items;
   const trackCount = tracks.length;
 
-  // Create the table
+  // === Calculate stats ===
+  tracks.forEach(item => {
+    const track = item.track;
+    totalDuration += track.duration_ms;
+    totalPopularity += track.popularity;
+  });
+
+  const avgPopularity = (totalPopularity / trackCount).toFixed(1);
+  const avgDurationMS = totalDuration / trackCount;
+
+  // === Create stats summary FIRST ===
+  const summary = document.createElement('div');
+  summary.style.marginTop = '30px';
+  summary.style.marginBottom = '20px';
+  summary.style.padding = '15px';
+  summary.style.backgroundColor = 'rgba(0,0,0,0.6)';
+  summary.style.borderRadius = '8px';
+  summary.style.color = 'white';
+  summary.style.textAlign = 'center';
+  summary.style.fontFamily = "'Montserrat', sans-serif";
+
+  summary.innerHTML = `
+    <h2>Playlist Stats</h2>
+    <p>Average Popularity: ${avgPopularity}</p>
+    <p>Average Song Length: ${formatDuration(avgDurationMS)}</p>
+  `;
+
+  container.appendChild(summary);  // Append summary BEFORE the table
+
   const table = document.createElement('table');
   table.style.width = '100%';
   table.style.borderCollapse = 'collapse';
   table.style.fontFamily = "'Cabin', sans-serif";
   table.style.color = 'black';
-  table.style.marginTop = '20px';
 
-  // Table header
   const headerRow = document.createElement('tr');
   const headers = ['Artwork', 'Title', 'Artist(s)', 'Album', 'Popularity', 'Length'];
   headers.forEach(header => {
@@ -98,11 +140,8 @@ window.onload = () => {
   });
   table.appendChild(headerRow);
 
-  // Table rows
   tracks.forEach(item => {
     const track = item.track;
-    totalDuration += track.duration_ms;
-    totalPopularity += track.popularity;
 
     const row = document.createElement('tr');
 
@@ -140,28 +179,6 @@ window.onload = () => {
     table.appendChild(row);
   });
 
-  // Append table to the container
-  container.appendChild(table);
-
-  // Summary Stats
-  const avgPopularity = (totalPopularity / trackCount).toFixed(1);
-  const avgDurationMS = totalDuration / trackCount;
-
-  const summary = document.createElement('div');
-  summary.style.marginTop = '30px';
-  summary.style.padding = '15px';
-  summary.style.backgroundColor = 'rgba(0,0,0,0.6)';
-  summary.style.borderRadius = '8px';
-  summary.style.color = 'white';
-  summary.style.textAlign = 'center';
-  summary.style.fontFamily = "'Montserrat', sans-serif";
-
-  summary.innerHTML = `
-    <h2>Playlist Stats</h2>
-    <p>Average Popularity: ${avgPopularity}</p>
-    <p>Average Song Length: ${formatDuration(avgDurationMS)}</p>
-  `;
-
-  container.appendChild(summary);
+  container.appendChild(table);  
 }
-};
+
