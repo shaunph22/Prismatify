@@ -20,22 +20,23 @@ function redirectToSpotifyLogin() {
   window.location.href = authUrl;
 }
 
-// Token handling
-let accessToken = getTokenFromUrl();
-if (!accessToken) {
-  redirectToSpotifyLogin();
-} else {
-  // Clean the URL after token extraction
-  window.history.pushState("", document.title, window.location.pathname + window.location.search);
-  console.log("✅ Access token obtained:", accessToken);
-}
-
 // Loading page
 window.onload = () => {
+  let accessToken = getTokenFromUrl() || localStorage.getItem('spotify_access_token');
+
   if (!accessToken) {
-    alert('No Spotify access token found. Please log in.');
-    return;
+    redirectToSpotifyLogin();
   }
+  else {
+    window.history.pushState("", document.title, window.location.pathname + window.location.search);
+    console.log("✅ Access token obtained:", accessToken);
+
+    if(getTokenFromUrl()){
+      localStorage.setItem('spotify_access_token', accessToken);
+    }
+  }
+
+  
 
   const analyzeBtn = document.getElementById('analyzeButton');
   analyzeBtn.addEventListener('click', async () => {
