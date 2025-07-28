@@ -36,7 +36,7 @@ window.onload = () => {
   console.log("Access token obtained: ", accessToken);
 
   const analyzeBtn = document.getElementById('analyzeButton');
-  analyzeBtn.addEventListener('click', () => {
+  analyzeBtn.addEventListener('click', async () => {
     const playlistUrl = document.getElementById('playlistLink').value.trim();
     const playlistID = extractPlaylistID(playlistUrl);
 
