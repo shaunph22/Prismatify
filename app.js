@@ -27,7 +27,7 @@ window.onload = () => {
   if (tokenFromUrl){
     localStorage.setItem('spotify_access_token', tokenFromUrl);
 
-    window.location.hash = '';
+    window.history.replaceState(null, null, window.location.pathname);
   }
 
   const accessToken = localStorage.getItem('spotify_access_token');
