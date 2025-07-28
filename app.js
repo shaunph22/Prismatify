@@ -22,20 +22,22 @@ function redirectToSpotifyLogin() {
 
 // Loading page
 window.onload = () => {
-  let accessToken = getTokenFromUrl() || localStorage.getItem('spotify_access_token');
+  const tokenFromUrl = getTokenFromUrl();
 
-  if (!accessToken) {
+  if (tokenFromUrl){
+    localStorage.setItem('spotify_access_token', tokenFromUrl);
+
+    window.location.hash = '';
+  }
+
+  const accessToken = localStorage.getItem('spotify_access_token');
+
+  if(!accessToken){
     redirectToSpotifyLogin();
+    return;
   }
-  else {
-    window.history.pushState("", document.title, window.location.pathname + window.location.search);
-    console.log("✅ Access token obtained:", accessToken);
 
-    if(getTokenFromUrl()){
-      localStorage.setItem('spotify_access_token', accessToken);
-      window.history.replaceState({}, document.title, "/");
-    }
-  }
+  console.log("Access token obtained: ", accessToken);
 
   const analyzeBtn = document.getElementById('analyzeButton');
   analyzeBtn.addEventListener('click', async () => {
