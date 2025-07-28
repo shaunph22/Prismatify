@@ -20,22 +20,24 @@ function redirectToSpotifyLogin() {
 window.onload = () => {
   const tokenFromUrl = getTokenFromUrl();
 
-  if (tokenFromUrl){
+  if (tokenFromUrl) {
     localStorage.setItem('spotify_access_token', tokenFromUrl);
-
-    window.location.hash = '';
+    // Remove access token from URL without reloading
+    window.history.replaceState({}, document.title, "/Prismatify/");
   }
 
   const accessToken = localStorage.getItem('spotify_access_token');
 
-  if(!accessToken){
-    if(!window.location.href.includes('access_token')){
+  if (!accessToken) {
+    // Don't redirect repeatedly
+    const currentHash = window.location.hash;
+    if (!currentHash.includes('access_token')) {
       redirectToSpotifyLogin();
     }
     return;
   }
 
-  console.log("Access token obtained: ", accessToken);
+  console.log('✅ Access token loaded:', accessToken);
 
   const analyzeBtn = document.getElementById('analyzeButton');
   analyzeBtn.addEventListener('click', async () => {
@@ -43,28 +45,27 @@ window.onload = () => {
     const playlistID = extractPlaylistID(playlistUrl);
 
     if (!playlistID) {
-      alert('Please enter a valid Spotify playlist URL.');
+      alert('❗ Please enter a valid Spotify playlist URL.');
       return;
     }
 
     try {
       const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistID}`, {
         headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
 
       if (!response.ok) {
-        alert('Could not fetch playlist data. Please make sure the playlist is public.');
+        alert('❌ Failed to load playlist. Make sure it’s public and the token is valid.');
         return;
       }
 
       const playlist = await response.json();
       displayPlaylist(playlist);
-
     } catch (error) {
-      alert('Error fetching playlist data.');
-      console.error(error);
+      console.error('Error fetching playlist:', error);
+      alert('⚠️ Error fetching playlist. Check console for details.');
     }
   });
 };
