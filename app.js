@@ -23,13 +23,15 @@ window.onload = () => {
   if (tokenFromUrl){
     localStorage.setItem('spotify_access_token', tokenFromUrl);
 
-    window.history.replaceState(null, null, window.location.pathname);
+    window.location.hash = '';
   }
 
   const accessToken = localStorage.getItem('spotify_access_token');
 
   if(!accessToken){
-    redirectToSpotifyLogin();
+    if(!window.location.href.includes('access_token')){
+      redirectToSpotifyLogin();
+    }
     return;
   }
 
