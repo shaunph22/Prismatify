@@ -1,3 +1,7 @@
+// =====================
+// Helper Functions
+// =====================
+
 // Receive token from URL
 function getTokenFromUrl() {
   const hash = window.location.hash.substring(1);
@@ -5,7 +9,7 @@ function getTokenFromUrl() {
   return params.get('access_token');
 }
 
-// Spotify login
+// Spotify login redirect
 function redirectToSpotifyLogin() {
   const clientId = '22b5867be4c74e949ac5c0e10f6b1b12';
   const redirectUri = 'https://shaunph22.github.io/Prismatify/';
@@ -15,7 +19,7 @@ function redirectToSpotifyLogin() {
   window.location.href = authUrl;
 }
 
-// Extract Spotify playlist ID from full playlist URL
+// Extract Spotify playlist ID from URL
 function extractPlaylistID(url) {
   const regex = /playlist\/([a-zA-Z0-9]+)/;
   const match = url.match(regex);
@@ -54,7 +58,7 @@ function displayPlaylist(playlist) {
   const avgPopularity = (totalPopularity / trackCount).toFixed(1);
   const avgDurationMS = totalDuration / trackCount;
 
-  // Summary
+  // === Summary Block ===
   const summary = document.createElement('div');
   summary.style.marginTop = '30px';
   summary.style.marginBottom = '20px';
@@ -71,7 +75,7 @@ function displayPlaylist(playlist) {
   `;
   container.appendChild(summary);
 
-  // Table
+  // === Tracks Table ===
   const table = document.createElement('table');
   table.style.width = '100%';
   table.style.borderCollapse = 'collapse';
@@ -131,12 +135,15 @@ function displayPlaylist(playlist) {
   container.appendChild(table);
 }
 
-// Main
+// =====================
+// Main Onload Logic
+// =====================
 window.onload = () => {
   const tokenFromUrl = getTokenFromUrl();
 
   if (tokenFromUrl) {
     localStorage.setItem("spotify_access_token", tokenFromUrl);
+    // Remove token from URL hash without reloading
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 
@@ -166,6 +173,14 @@ window.onload = () => {
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
 
+        // If token expired or invalid, redirect to login safely
+        if (response.status === 401) {
+          console.warn("⚠️ Access token expired or invalid. Redirecting to Spotify login...");
+          localStorage.removeItem("spotify_access_token");
+          redirectToSpotifyLogin();
+          return;
+        }
+
         if (!response.ok) {
           console.error("Spotify API error:", response.status, response.statusText);
           alert("❌ Failed to load playlist. Make sure it’s public and token is valid.");
@@ -181,3 +196,4 @@ window.onload = () => {
     });
   }
 };
+
