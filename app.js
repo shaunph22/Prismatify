@@ -88,40 +88,43 @@ async function fetchAccessToken(code) {
 function extractPlaylistID(url) {
   const regex = /playlist\/([a-zA-Z0-9]+)(?:\?.*)?/;
   const match = url.match(regex);
+  console.log("Extracted playlist ID:", match ? match[1] : "❌ failed");
   return match ? match[1] : null;
 }
 
+
 async function fetchPlaylist(playlistId) {
   const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}`, {
-    headers: { Authorization: `Bearer ${accessToken}` }
+    headers: { 'Authorization': 'Bearer ' + accessToken }
   });
 
+  console.log("Fetch response status:", response.status);
+
   if (!response.ok) {
-    console.error("Spotify API error:", await response.text());
-    alert("❌ Failed to load playlist. See console for details.");
+    const errText = await response.text();
+    console.error("Spotify API error:", errText);
+    alert("❌ Failed to load playlist. Check console.");
     return null;
   }
 
-  return await response.json();
+  const data = await response.json();
+  console.log("Fetched playlist object:", data);
+  return data;
 }
 
+
 function displayPlaylist(playlist) {
-  const outputDiv = document.getElementById("output");
-  outputDiv.innerHTML = `
-    <h2>${playlist.name}</h2>
-    <p>${playlist.tracks.items.length} tracks</p>
-    <ul>
-      ${playlist.tracks.items
-        .map(
-          (item) =>
-            `<li>${item.track.name} — ${item.track.artists
-              .map((a) => a.name)
-              .join(", ")}</li>`
-        )
-        .join("")}
-    </ul>
-  `;
+  console.log("Displaying playlist:", playlist);
+
+  if (!playlist || !playlist.tracks || !playlist.tracks.items) {
+    console.error("Invalid playlist structure:", playlist);
+    return;
+  }
+
+  const firstTrack = playlist.tracks.items[0]?.track?.name || "No tracks";
+  document.getElementById("results").innerHTML = `<p>First track: ${firstTrack}</p>`;
 }
+
 
 // =========================
 // Button Handlers
