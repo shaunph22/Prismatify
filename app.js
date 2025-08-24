@@ -1,166 +1,69 @@
-const clientId = "22b5867be4c74e949ac5c0e10f6b1b12";
-const redirectUri = "https://shaunph22.github.io/Prismatify/";
-
-const scopes = [
-  "playlist-read-private",
-  "playlist-read-collaborative"
-];
-
-let accessToken = null;
-
-// Generate random string for PKCE
-function generateCodeVerifier(length = 128) {
-  let text = "";
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < length; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
+// Get access token from URL hash (implicit grant flow)
+function getAccessTokenFromUrl() {
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    return params.get("access_token");
 }
 
-// SHA256 helper
-async function sha256(plain) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(plain);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  return new Uint8Array(hashBuffer);
+const accessToken = getAccessTokenFromUrl();
+
+// Check for token
+if (!accessToken) {
+    console.error("No access token found. Please login again.");
 }
 
-function base64UrlEncode(bytes) {
-  return btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
+// Handle Analyze button click
+document.getElementById("analyzeButton").addEventListener("click", async () => {
+    const playlistUrl = document.getElementById("playlistLink").value.trim();
 
-// Redirect to Spotify for login
-async function redirectToSpotifyAuth() {
-  const codeVerifier = generateCodeVerifier();
-  localStorage.setItem("code_verifier", codeVerifier);
+    if (!playlistUrl) {
+        document.getElementById("playlistResults").innerHTML = "<p>Please enter a playlist URL.</p>";
+        return;
+    }
 
-  const codeChallenge = base64UrlEncode(await sha256(codeVerifier));
+    document.getElementById("playlistResults").innerHTML = "<p>Loading...</p>";
 
-  const authUrl = new URL("https://accounts.spotify.com/authorize");
-  authUrl.searchParams.set("client_id", clientId);
-  authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("redirect_uri", redirectUri);
-  authUrl.searchParams.set("scope", scopes.join(" "));
-  authUrl.searchParams.set("code_challenge_method", "S256");
-  authUrl.searchParams.set("code_challenge", codeChallenge);
+    try {
+        // Extract playlist ID from URL
+        const playlistId = playlistUrl.split("playlist/")[1].split("?")[0];
 
-  window.location = authUrl.toString();
-}
+        // Fetch playlist details + first 100 tracks
+        const response = await fetch(
+            `https://api.spotify.com/v1/playlists/${playlistId}?market=US&limit=100`,
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            }
+        );
 
-// Exchange code for access token
-async function fetchAccessToken(code) {
-  const codeVerifier = localStorage.getItem("code_verifier");
+        const data = await response.json();
 
-  const body = new URLSearchParams({
-    client_id: clientId,
-    grant_type: "authorization_code",
-    code,
-    redirect_uri: redirectUri,
-    code_verifier: codeVerifier
-  });
+        if (data.error) {
+            document.getElementById("playlistResults").innerHTML = `<p>Error: ${data.error.message}</p>`;
+            return;
+        }
 
-  const response = await fetch("https://accounts.spotify.com/api/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body
-  });
+        // Render playlist info
+        let html = `<h2>${data.name}</h2>`;
+        html += `<p>Total tracks: ${data.tracks.total}</p>`;
+        html += "<ul>";
 
-  if (!response.ok) {
-    console.error("Failed to fetch access token", await response.text());
-    return null;
-  }
+        // Loop through first 100 tracks
+        data.tracks.items.forEach((item, index) => {
+            if (!item.track) return; // skip if null (local/unavailable track)
+            const track = item.track;
+            const artists = track.artists.map(a => a.name).join(", ");
+            html += `<li>${index + 1}. ${artists} — ${track.name}</li>`;
+        });
 
-  const data = await response.json();
-  accessToken = data.access_token;
-  console.log("✅ Access token acquired:", accessToken);
-  return accessToken;
-}
+        html += "</ul>";
 
-// =========================
-// Playlist Analysis Logic
-// =========================
+        document.getElementById("playlistResults").innerHTML = html;
 
-// Extract playlist ID
-function extractPlaylistID(url) {
-  const regex = /playlist\/([a-zA-Z0-9]+)(?:\?.*)?/;
-  const match = url.match(regex);
-  console.log("Extracted playlist ID:", match ? match[1] : "❌ failed");
-  return match ? match[1] : null;
-}
-
-
-async function fetchPlaylist(playlistId) {
-  const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}`, {
-    headers: { 'Authorization': 'Bearer ' + accessToken }
-  });
-
-  console.log("Fetch response status:", response.status);
-
-  if (!response.ok) {
-    const errText = await response.text();
-    console.error("Spotify API error:", errText);
-    alert("❌ Failed to load playlist. Check console.");
-    return null;
-  }
-
-  const data = await response.json();
-  console.log("Fetched playlist object:", data);
-  return data;
-}
-
-
-function displayPlaylist(playlist) {
-  console.log("Displaying playlist:", playlist);
-
-  if (!playlist || !playlist.tracks || !playlist.tracks.items) {
-    console.error("Invalid playlist structure:", playlist);
-    return;
-  }
-
-  const firstTrack = playlist.tracks.items[0]?.track?.name || "No tracks";
-  document.getElementById("results").innerHTML = `<p>First track: ${firstTrack}</p>`;
-}
-
-
-// =========================
-// Button Handlers
-// =========================
-
-document.getElementById("loginBtn").addEventListener("click", redirectToSpotifyAuth);
-
-document.getElementById("analyzeBtn").addEventListener("click", async () => {
-  const playlistUrl = document.getElementById("playlistUrl").value;
-  const playlistId = extractPlaylistID(playlistUrl);
-
-  if (!playlistId) {
-    alert("❌ Please enter a valid Spotify playlist link.");
-    return;
-  }
-
-  if (!accessToken) {
-    alert("⚠️ Not logged in yet. Please log in first.");
-    return;
-  }
-
-  const playlist = await fetchPlaylist(playlistId);
-  if (playlist) displayPlaylist(playlist);
+    } catch (error) {
+        console.error("Error fetching playlist:", error);
+        document.getElementById("playlistResults").innerHTML =
+            "<p>Failed to load playlist. Please try again.</p>";
+    }
 });
-
-// =========================
-// Handle Redirect Back
-// =========================
-
-window.addEventListener("load", async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get("code");
-
-  if (code) {
-    await fetchAccessToken(code);
-    window.history.replaceState({}, document.title, redirectUri); // clean up URL
-  }
-});
-
