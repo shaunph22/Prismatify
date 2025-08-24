@@ -107,7 +107,7 @@ async function fetchPlaylist(playlistId) {
 }
 
 function displayPlaylist(playlist) {
-  const container = document.getElementById("playlistResults");
+  const container = document.getElementById("results");
   container.innerHTML = "";
 
   const tracks = playlist.tracks.items || [];
@@ -226,7 +226,7 @@ window.addEventListener("load", async () => {
   }
 
   // Wire analyze button
-  const analyzeBtn = document.getElementById("analyzeButton");
+  const analyzeBtn = document.getElementById("analyzeBtn");
   if (analyzeBtn) {
     analyzeBtn.addEventListener("click", async () => {
       const playlistUrl = document.getElementById("playlistLink").value.trim();
