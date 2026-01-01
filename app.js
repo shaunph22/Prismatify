@@ -106,30 +106,6 @@ async function fetchPlaylist(playlistId) {
   return await response.json();
 }
 
-async function fetchAudioFeatures(trackIds) {
-  if (!trackIds.length) return [];
-  
-  const batches = [];
-  for (let i = 0; i < trackIds.length; i += 100) {
-    batches.push(trackIds.slice(i, i + 100));
-  }
-
-  const results = [];
-  for (const batch of batches) {
-    const response = await fetch(
-      `https://api.spotify.com/v1/audio-features?ids=${batch.join(",")}`,
-      { headers: { Authorization: "Bearer " + accessToken } }
-    );
-    if (!response.ok) {
-      console.error("Failed to fetch audio features", await response.text());
-      continue;
-    }
-    const data = await response.json();
-    results.push(...data.audio_features);
-  }
-  return results;
-}
-
 async function displayPlaylist(playlist) {
   const container = document.getElementById("results");
   container.innerHTML = "";
@@ -160,19 +136,9 @@ async function displayPlaylist(playlist) {
 
   const validTracks = allTracks.filter(item => item.track && item.track.id);
 
-  // Fetch BPM for all tracks
-  const trackIds = validTracks.map(item => item.track?.id).filter(id => id);
-  const audioFeatures = await fetchAudioFeatures(trackIds);
-
-  // Map BPM to tracks
-  validTracks.forEach((item, i) => {
-    item.track.bpm = audioFeatures[i]?.tempo || 0;
-  });
-
   // --- Stats ---
   let totalDuration = 0;
   let totalPopularity = 0;
-  let totalBPM = 0;
   const trackCount = validTracks.length;
 
   validTracks.forEach((item) => {
@@ -180,12 +146,10 @@ async function displayPlaylist(playlist) {
     if (!track) return;
     totalDuration += track.duration_ms;
     totalPopularity += track.popularity;
-    totalBPM += track.bpm;
   });
 
   const avgPopularity = (totalPopularity / trackCount).toFixed(1);
   const avgDurationMS = totalDuration / trackCount;
-  const avgBPM = (totalBPM / trackCount).toFixed(1);
 
   const summary = document.createElement("div");
   summary.style.marginTop = "30px";
@@ -200,7 +164,6 @@ async function displayPlaylist(playlist) {
     <h2>Playlist Stats</h2>
     <p>Average Popularity: ${avgPopularity}</p>
     <p>Average Song Length: ${formatDuration(avgDurationMS)}</p>
-    <p>Average BPM: ${avgBPM}</p>
   `;
   container.appendChild(summary);
 
@@ -211,7 +174,7 @@ async function displayPlaylist(playlist) {
   table.style.fontFamily = "'Cabin', sans-serif";
   table.style.color = "black";
 
-  const headers = ["Artwork", "Title", "Artist(s)", "Album", "Popularity", "Length", "BPM"];
+  const headers = ["Artwork", "Title", "Artist(s)", "Album", "Popularity", "Length"];
   const headerRow = document.createElement("tr");
   headers.forEach((h) => {
     const th = document.createElement("th");
@@ -252,10 +215,6 @@ async function displayPlaylist(playlist) {
     const lengthCell = document.createElement("td");
     lengthCell.textContent = formatDuration(track.duration_ms);
     lengthCell.style.padding = "10px";
-
-    const bpmCell = document.createElement("td");
-    bpmCell.textContent = Math.round(track.bpm);
-    bpmCell.style.padding = "10px";
 
     row.appendChild(artworkCell);
     row.appendChild(titleCell);
