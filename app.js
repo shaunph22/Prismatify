@@ -134,29 +134,48 @@ async function displayPlaylist(playlist) {
   const container = document.getElementById("results");
   container.innerHTML = "";
 
-  const tracks = playlist.tracks.items || [];
+  async function fetchAllPlaylistTracks(playlistId) {
+    let tracks = [];
+    let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
 
-  // Fetch BPM for all tracks
-  const trackIds = tracks.map(item => item.track?.id).filter(id => id);
-  const audioFeatures = await fetchAudioFeatures(trackIds);
+    while (url) {
+      const response = await fetch(url, { headers: { Authorization: "Bearer " + accessToken } });
+      if (!response.ok) {
+        console.error("Failed to fetch tracks:", await response.text());
+        return [];
+      }
+      const data = await response.json();
+      tracks.push(...data.items);
+      url = data.next; // next page URL
+    }
+    return tracks;
+  }
 
-  // Map BPM to tracks
-  tracks.forEach((item, i) => {
-    item.track.bpm = audioFeatures[i]?.tempo || 0;
-  });
+  const allTracks = await fetchAllPlaylistTracks(playlist.id);
 
-  if (!tracks.length) {
+  if (!allTracks.length) {
     container.innerHTML = "<p>No tracks found in this playlist.</p>";
     return;
   }
+
+  const validTracks = allTracks.filter(item => item.track && item.track.id);
+
+  // Fetch BPM for all tracks
+  const trackIds = validTracks.map(item => item.track?.id).filter(id => id);
+  const audioFeatures = await fetchAudioFeatures(trackIds);
+
+  // Map BPM to tracks
+  validTracks.forEach((item, i) => {
+    item.track.bpm = audioFeatures[i]?.tempo || 0;
+  });
 
   // --- Stats ---
   let totalDuration = 0;
   let totalPopularity = 0;
   let totalBPM = 0;
-  const trackCount = tracks.length;
+  const trackCount = validTracks.length;
 
-  tracks.forEach((item) => {
+  validTracks.forEach((item) => {
     const track = item.track;
     if (!track) return;
     totalDuration += track.duration_ms;
@@ -204,7 +223,7 @@ async function displayPlaylist(playlist) {
   });
   table.appendChild(headerRow);
 
-  tracks.forEach((item) => {
+  validTracks.forEach((item) => {
     const track = item.track;
     if (!track) return;
 
