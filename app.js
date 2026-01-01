@@ -222,7 +222,6 @@ async function displayPlaylist(playlist) {
     row.appendChild(albumCell);
     row.appendChild(popularityCell);
     row.appendChild(lengthCell);
-    row.appendChild(bpmCell);
 
     table.appendChild(row);
   });
